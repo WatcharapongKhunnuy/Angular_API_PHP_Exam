@@ -1,0 +1,250 @@
+<style>
+  :host {
+    --ruts-blue: #003366;
+    --ruts-gold: #ffcc00;
+    --ruts-bg: #f4f7f9;
+    --text-dark: #2c3e50;
+    font-family: 'Sarabun', 'Segoe UI', sans-serif;
+    display: block;
+    min-height: 100vh;
+    background-color: var(--ruts-bg);
+  }
+
+  .admin-bar { background: #333; color: white; padding: 12px; text-align: center; position: sticky; top: 0; z-index: 1001; }
+  .btn-admin { background: var(--ruts-gold); color: #333; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+  .hero-banner { background: linear-gradient(rgba(0, 51, 102, 0.8), rgba(0, 51, 102, 0.8)), url('/computer.jpg'); background-size: cover; background-position: center; color: white; padding: 3rem 1rem; text-align: center; border-bottom: 5px solid var(--ruts-gold); }
+  nav { background: white; display: flex; justify-content: center; padding: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+  nav button { background: none; border: none; padding: 1.2rem 2rem; font-weight: 600; color: var(--ruts-blue); cursor: pointer; border-bottom: 4px solid transparent; transition: 0.3s; }
+  nav button.active { border-bottom-color: var(--ruts-gold); color: #e6b800; }
+
+  main { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+  .content-card { background: white; border-radius: 15px; padding: 2rem; box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 2rem; }
+  .section-header { border-left: 8px solid var(--ruts-gold); padding-left: 15px; color: var(--ruts-blue); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+
+  .info-group { margin-bottom: 2rem; }
+  .info-group h3 { color: var(--ruts-blue); border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 15px; font-size: 1.3rem; }
+  .info-item { background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; }
+  .info-item strong { color: var(--ruts-blue); display: block; margin-bottom: 5px; font-size: 1.05rem; }
+
+  .career-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; margin-top: 10px; }
+  .career-tag { background: #eef2f7; padding: 10px 15px; border-radius: 6px; border-left: 4px solid var(--ruts-blue); color: var(--ruts-blue); font-weight: 500; }
+
+  /* Modals */
+  .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; }
+  .modal-form { background: white; padding: 2rem; border-radius: 15px; width: 700px; max-height: 90vh; overflow-y: auto; }
+  .form-group { margin-bottom: 1rem; }
+  label { display: block; margin-bottom: 5px; font-weight: bold; color: var(--ruts-blue); }
+  input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; }
+  .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+  .btn-save { background: #28a745; color: white; }
+  .btn-cancel { background: #6c757d; color: white; }
+  .btn-edit { background: var(--ruts-gold); color: #333; font-size: 0.9rem; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
+  th { background: #f8f9fa; color: var(--ruts-blue); }
+
+  .footer-contact { background: #001a33; color: white; padding: 3rem 1rem; text-align: center; }
+</style>
+
+<div class="admin-bar">
+  <button class="btn-admin" (click)="toggleAdmin()">
+    {{ isAdmin() ? '🔒 ปิดโหมดจัดการ' : '🔑 เปิดโหมดจัดการข้อมูล (Admin Mode)' }}
+  </button>
+</div>
+
+<header class="hero-banner">
+  <h1>{{ curriculum().name_th }}</h1>
+  <p>{{ curriculum().name_en }}</p>
+</header>
+
+<nav>
+  <button [class.active]="activeTab() === 'overview'" (click)="setTab('overview')">ข้อมูลหลักสูตร</button>
+  <button [class.active]="activeTab() === 'staff'" (click)="setTab('staff')">บุคลากร</button>
+  <button [class.active]="activeTab() === 'plan'" (click)="setTab('plan')">แผนการเรียน</button>
+  <button [class.active]="activeTab() === 'careers'" (click)="setTab('careers')">อาชีพที่ประกอบได้</button>
+</nav>
+
+<main>
+  <!-- OVERVIEW TAB -->
+  <div *ngIf="activeTab() === 'overview'" class="content-card">
+    <div class="section-header">
+      <h2>ข้อมูลหลักสูตรเบื้องต้น</h2>
+      <button *ngIf="isAdmin()" class="btn btn-edit" (click)="startEdit(curriculum())">แก้ไขข้อมูล</button>
+    </div>
+
+    <div class="info-group">
+      <h3>ชื่อหลักสูตร</h3>
+      <div class="info-item"><strong>ชื่อภาษาไทย:</strong> {{ curriculum().name_th }}</div>
+      <div class="info-item"><strong>ชื่อภาษาอังกฤษ:</strong> {{ curriculum().name_en }}</div>
+    </div>
+
+    <div class="info-group">
+      <h3>ชื่อปริญญาและสาขาวิชา</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="info-item"><strong>ชื่อเต็ม (ไทย):</strong> {{ curriculum().degree_full_th }}</div>
+        <div class="info-item"><strong>ชื่อย่อ (ไทย):</strong> {{ curriculum().degree_short_th }}</div>
+        <div class="info-item"><strong>ชื่อเต็ม (ENG):</strong> {{ curriculum().degree_full_en }}</div>
+        <div class="info-item"><strong>ชื่อย่อ (ENG):</strong> {{ curriculum().degree_short_en }}</div>
+      </div>
+    </div>
+
+    <div class="info-group">
+      <h3>หน่วยกิตและรูปแบบหลักสูตร</h3>
+      <div class="info-item"><strong>จำนวนหน่วยกิต:</strong> {{ curriculum().total_credits }}</div>
+      <div class="info-item"><strong>รูปแบบ / ประเภท:</strong> {{ curriculum().format }} / {{ curriculum().type }}</div>
+      <div class="info-item"><strong>ภาษาที่ใช้:</strong> {{ curriculum().language }}</div>
+      <div class="info-item"><strong>การรับเข้าศึกษา:</strong> {{ curriculum().admission }}</div>
+      <div class="info-item"><strong>ความร่วมมือ / การให้ปริญญา:</strong> {{ curriculum().collaboration }} / {{ curriculum().graduation }}</div>
+    </div>
+
+    <div class="info-group">
+        <h3>แผนการศึกษา</h3>
+        <div class="info-item">{{ curriculum().study_plan_name }}</div>
+    </div>
+  </div>
+
+  <!-- STAFF TAB -->
+  <div *ngIf="activeTab() === 'staff'" class="content-card">
+    <div class="section-header">
+      <h2>บุคลากรประจำหลักสูตร</h2>
+      <button *ngIf="isAdmin()" class="btn" style="background:var(--ruts-blue); color:white" (click)="startAdd('staff')">+ เพิ่มอาจารย์</button>
+    </div>
+    <table>
+      <thead><tr><th>ชื่อ-นามสกุล</th><th>ตำแหน่ง</th><th>ความเชี่ยวชาญ</th><th *ngIf="isAdmin()">จัดการ</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let s of staff()">
+          <td>{{ s.name }}</td>
+          <td>{{ s.position }}</td>
+          <td>{{ s.specialization }}</td>
+          <td *ngIf="isAdmin()">
+            <button class="btn btn-edit" (click)="startEdit(s)">แก้ไข</button>
+            <button class="btn" style="background:#dc3545; color:white; padding:5px 10px" (click)="deleteEntity('staff', s.id)">ลบ</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PLAN TAB -->
+  <div *ngIf="activeTab() === 'plan'" class="content-card">
+    <div class="section-header">
+      <h2>{{ curriculum().study_plan_name }}</h2>
+      <button *ngIf="isAdmin()" class="btn" style="background:var(--ruts-blue); color:white" (click)="startAdd('study_plan')">+ เพิ่มรายวิชา</button>
+    </div>
+    <table>
+      <thead><tr><th>รหัสวิชา</th><th>ชื่อวิชา</th><th>หน่วยกิต</th><th>ชั้นปี/เทอม</th><th *ngIf="isAdmin()">จัดการ</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let p of studyPlan()">
+          <td>{{ p.course_code }}</td>
+          <td>{{ p.course_name }}</td>
+          <td>{{ p.credits }}</td>
+          <td>ปี {{ p.year }} เทอม {{ p.semester }}</td>
+          <td *ngIf="isAdmin()">
+            <button class="btn btn-edit" (click)="startEdit(p)">แก้ไข</button>
+            <button class="btn" style="background:#dc3545; color:white; padding:5px 10px" (click)="deleteEntity('study_plans', p.id)">ลบ</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CAREERS TAB -->
+  <div *ngIf="activeTab() === 'careers'" class="content-card">
+    <div class="section-header">
+      <h2>อาชีพที่สามารถประกอบได้</h2>
+      <button *ngIf="isAdmin()" class="btn" style="background:var(--ruts-blue); color:white" (click)="startAdd('careers')">+ เพิ่มอาชีพ</button>
+    </div>
+    <div class="career-grid">
+      <div *ngFor="let c of careers()" class="career-tag" style="display: flex; justify-content: space-between; align-items: center;">
+        {{ c.title_th }}
+        <div *ngIf="isAdmin()">
+            <button (click)="startEdit(c)" style="border:none; cursor:pointer; background:none">✏️</button>
+            <button (click)="deleteEntity('careers', c.id)" style="border:none; cursor:pointer; background:none">🗑️</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="footer-contact">
+  <div style="max-width: 800px; margin: 0 auto;">
+    <h3 style="margin-bottom: 15px;">ช่องทางติดต่อ</h3>
+    <button *ngIf="isAdmin()" class="btn btn-edit" style="margin-bottom: 15px;" (click)="startEdit(contact())">แก้ไขช่องทางติดต่อ</button>
+    <p>{{ contact().address }}</p>
+    <p>โทร. {{ contact().phone }}</p>
+  </div>
+</div>
+
+<!-- UNIVERSAL EDIT MODAL -->
+<div class="overlay" *ngIf="editingItem()">
+  <div class="modal-form">
+    <h2 style="color: var(--ruts-blue); margin-bottom: 1.5rem; border-bottom: 2px solid var(--ruts-gold); padding-bottom: 10px;">
+      จัดการข้อมูล ({{ activeTab() }})
+    </h2>
+    
+    <!-- Form for Curriculums -->
+    <div *ngIf="activeTab() === 'overview'">
+      <div class="form-group"><label>ชื่อหลักสูตร (ไทย)</label><input [(ngModel)]="editingItem().name_th"></div>
+      <div class="form-group"><label>ชื่อหลักสูตร (ENG)</label><input [(ngModel)]="editingItem().name_en"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="form-group"><label>ชื่อเต็มปริญญา (ไทย)</label><input [(ngModel)]="editingItem().degree_full_th"></div>
+        <div class="form-group"><label>ชื่อย่อปริญญา (ไทย)</label><input [(ngModel)]="editingItem().degree_short_th"></div>
+        <div class="form-group"><label>ชื่อเต็มปริญญา (ENG)</label><input [(ngModel)]="editingItem().degree_full_en"></div>
+        <div class="form-group"><label>ชื่อย่อปริญญา (ENG)</label><input [(ngModel)]="editingItem().degree_short_en"></div>
+      </div>
+      <div class="form-group"><label>จำนวนหน่วยกิต</label><input [(ngModel)]="editingItem().total_credits"></div>
+      <div class="form-group"><label>รูปแบบหลักสูตร</label><input [(ngModel)]="editingItem().format"></div>
+      <div class="form-group"><label>ประเภทหลักสูตร</label><input [(ngModel)]="editingItem().type"></div>
+      <div class="form-group"><label>ภาษาที่ใช้</label><textarea rows="2" [(ngModel)]="editingItem().language"></textarea></div>
+      <div class="form-group"><label>การรับเข้าศึกษา</label><input [(ngModel)]="editingItem().admission"></div>
+      <div class="form-group"><label>ความร่วมมือ</label><input [(ngModel)]="editingItem().collaboration"></div>
+      <div class="form-group"><label>การให้ปริญญา</label><input [(ngModel)]="editingItem().graduation"></div>
+      <div class="form-group"><label>ชื่อแผนการศึกษา</label><input [(ngModel)]="editingItem().study_plan_name"></div>
+      <button class="btn btn-save" (click)="saveEntity('curriculums', 1, editingItem())">บันทึกหลักสูตร</button>
+    </div>
+
+    <!-- Form for Staff -->
+    <div *ngIf="activeTab() === 'staff'">
+      <div class="form-group"><label>ชื่อ-นามสกุล</label><input [(ngModel)]="editingItem().name"></div>
+      <div class="form-group"><label>ตำแหน่ง</label><input [(ngModel)]="editingItem().position"></div>
+      <div class="form-group"><label>ความเชี่ยวชาญ</label><textarea [(ngModel)]="editingItem().specialization"></textarea></div>
+      <button *ngIf="editingItem().isNew" class="btn btn-save" (click)="addEntity('staff', editingItem())">เพิ่มอาจารย์</button>
+      <button *ngIf="!editingItem().isNew" class="btn btn-save" (click)="saveEntity('staff', editingItem().id, editingItem())">บันทึกการแก้ไข</button>
+    </div>
+
+    <!-- Form for Study Plan -->
+    <div *ngIf="activeTab() === 'plan'">
+      <div class="form-group"><label>รหัสวิชา</label><input [(ngModel)]="editingItem().course_code"></div>
+      <div class="form-group"><label>ชื่อวิชา</label><input [(ngModel)]="editingItem().course_name"></div>
+      <div style="display: flex; gap: 10px;">
+        <div class="form-group" style="flex:1"><label>หน่วยกิต</label><input type="number" [(ngModel)]="editingItem().credits"></div>
+        <div class="form-group" style="flex:1"><label>ปี</label><input type="number" [(ngModel)]="editingItem().year"></div>
+        <div class="form-group" style="flex:1"><label>เทอม</label><input type="number" [(ngModel)]="editingItem().semester"></div>
+      </div>
+      <button *ngIf="editingItem().isNew" class="btn btn-save" (click)="addEntity('study_plans', editingItem())">เพิ่มวิชา</button>
+      <button *ngIf="!editingItem().isNew" class="btn btn-save" (click)="saveEntity('study_plans', editingItem().id, editingItem())">บันทึกการแก้ไข</button>
+    </div>
+
+    <!-- Form for Careers -->
+    <div *ngIf="activeTab() === 'careers'">
+      <div class="form-group"><label>ชื่ออาชีพ</label><input [(ngModel)]="editingItem().title_th"></div>
+      <button *ngIf="editingItem().isNew" class="btn btn-save" (click)="addEntity('careers', editingItem())">เพิ่มอาชีพ</button>
+      <button *ngIf="!editingItem().isNew" class="btn btn-save" (click)="saveEntity('careers', editingItem().id, editingItem())">บันทึกการแก้ไข</button>
+    </div>
+
+    <!-- Form for Contact (Always accessible via footer) -->
+    <div *ngIf="editingItem().address !== undefined">
+        <div class="form-group"><label>ที่อยู่</label><textarea rows="4" [(ngModel)]="editingItem().address"></textarea></div>
+        <div class="form-group"><label>โทรศัพท์</label><input [(ngModel)]="editingItem().phone"></div>
+        <button class="btn btn-save" (click)="saveEntity('contact_info', 1, editingItem())">บันทึกที่อยู่</button>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-cancel" (click)="editingItem.set(null)">ยกเลิก / ปิด</button>
+    </div>
+  </div>
+</div>
+
+<router-outlet />

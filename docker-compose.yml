@@ -1,0 +1,68 @@
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: ruts-db
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ruts
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: ruts_user
+      MYSQL_PASSWORD: ruts_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 5
+
+  # phpMyAdmin for DB management
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: ruts-phpmyadmin
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: rootpassword
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Node-RED for Backend REST API
+  nodered:
+    build:
+      context: .
+      dockerfile: docker/nodered/Dockerfile
+    container_name: ruts-nodered
+    restart: always
+    ports:
+      - "1880:1880"
+    environment:
+      TZ: Asia/Bangkok
+    volumes:
+      - nodered_data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Angular Frontend (Web Server)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ruts-web
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - nodered
+
+volumes:
+  db_data:
+  nodered_data:

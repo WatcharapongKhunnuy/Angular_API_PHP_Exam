@@ -1,0 +1,83 @@
+[
+    {
+        "id": "ruts-db-config",
+        "type": "MySQLdatabase",
+        "name": "ruts-db",
+        "host": "db",
+        "port": "3306",
+        "db": "ruts",
+        "user": "root",
+        "pass": "rootpassword",
+        "charset": "UTF8_GENERAL_CI"
+    },
+    {
+        "id": "api-entry",
+        "type": "http in",
+        "z": "ruts-flow",
+        "name": "Universal API",
+        "url": "/api/:table/:id",
+        "method": "get",
+        "upload": false,
+        "x": 100, "y": 100,
+        "wires": [["sql-logic"]]
+    },
+    {
+        "id": "api-post",
+        "type": "http in",
+        "z": "ruts-flow",
+        "name": "POST API",
+        "url": "/api/:table",
+        "method": "post",
+        "wires": [["sql-logic"]]
+    },
+    {
+        "id": "api-put",
+        "type": "http in",
+        "z": "ruts-flow",
+        "name": "PUT API",
+        "url": "/api/:table/:id",
+        "method": "put",
+        "wires": [["sql-logic"]]
+    },
+    {
+        "id": "api-delete",
+        "type": "http in",
+        "z": "ruts-flow",
+        "name": "DELETE API",
+        "url": "/api/:table/:id",
+        "method": "delete",
+        "wires": [["sql-logic"]]
+    },
+    {
+        "id": "sql-logic",
+        "type": "function",
+        "z": "ruts-flow",
+        "name": "SQL Builder",
+        "func": "const table = msg.req.params.table;\nconst id = msg.req.params.id;\nconst method = msg.req.method;\nconst p = msg.payload;\n\n// ไม่ต้องส่ง SET NAMES แล้วเพราะตั้งใน Config แล้ว\nlet sql = \"\";\n\nif (method === 'GET') {\n    if (id && id !== '0') sql = `SELECT * FROM ${table} WHERE id = ${id}`;\n    else sql = `SELECT * FROM ${table}`;\n} else if (method === 'POST') {\n    const keys = Object.keys(p).join(',');\n    const values = Object.values(p).map(v => `'${v}'`).join(',');\n    sql = `INSERT INTO ${table} (${keys}) VALUES (${values})`;\n} else if (method === 'PUT') {\n    const updates = Object.entries(p).map(([k, v]) => {\n        if (k === 'id') return null;\n        return `${k}='${v}'`;\n    }).filter(x => x).join(',');\n    sql = `UPDATE ${table} SET ${updates} WHERE id = ${id}`;\n} else if (method === 'DELETE') {\n    sql = `DELETE FROM ${table} WHERE id = ${id}`;\n}\n\nmsg.topic = sql;\nreturn msg;",
+        "wires": [["mysql-node"]]
+    },
+    {
+        "id": "mysql-node",
+        "type": "mysql",
+        "z": "ruts-flow",
+        "mydb": "ruts-db-config",
+        "name": "MySQL Exec",
+        "x": 400, "y": 250,
+        "wires": [["clean-resp"]]
+    },
+    {
+        "id": "clean-resp",
+        "type": "function",
+        "z": "ruts-flow",
+        "name": "Extract Result",
+        "func": "msg.headers = {\n    'Access-Control-Allow-Origin': '*',\n    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',\n    'Access-Control-Allow-Headers': 'Content-Type',\n    'Content-Type': 'application/json; charset=utf-8'\n};\nreturn msg;",
+        "wires": [["http-out"]]
+    },
+    {
+        "id": "http-out",
+        "type": "http response",
+        "z": "ruts-flow",
+        "x": 600, "y": 250,
+        "wires": []
+    }
+]
